@@ -159,7 +159,7 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
     // ARM M0: pxTopOfStack--;
     // ARM M0: *pxTopOfStack = ( StackType_t ) portTASK_RETURN_ADDRESS;    /* LR */
     // ARM M0: pxTopOfStack -= 5;                                          /* R12, R3, R2 and R1. */
-    // ARM M0: *pxTopOfStack = ( StackType_t ) pvParameters;    	       /* R0 */
+    // ARM M0: *pxTopOfStack = ( StackType_t ) pvParameters;               /* R0 */
     // ARM M0: pxTopOfStack -= 8;                                          /* R11..R4. */
 
 #if 0
@@ -241,24 +241,6 @@ void vPortSVCHandler( void )
 {
     /* This function is no longer used, but retained for backward
     compatibility. */
-
-    __asm volatile(
-    "psrclr ie                      \n"
-    "lrw r2, pxCurrentTCBConst2     \n"     /* Obtain location of pxCurrentTCB. */
-    "ld.w r2, (r2, 0)               \n"
-    "ld.w r2, (r2, 0)               \n"
-    "ld.w r2, (r2, 0)               \n"     /* The first item in pxCurrentTCB is the task top of stack. */
-    "                               \n"
-    "mov r0, r2                     \n"
-    "ldm r8-r15, (r0)               \n"
-    "addi r0, 32                    \n"     /* This is now the new top of stack to use in the task. */
-    "                               \n"
-    "psrset ie                      \n"
-    "rte                            \n"
-    "                               \n"
-    ".align 4                       \n"
-    "pxCurrentTCBConst2: .long pxCurrentTCB"
-   );
 }
 /*-----------------------------------------------------------*/
 
@@ -296,8 +278,21 @@ void vPortStartFirstTask( void )
     // ARM M0:               );
     
     __asm volatile(
-    "psrset   ie                    \n"
-    "trap     0                     \n"
+    "psrclr ie                      \n"
+    "lrw r2, pxCurrentTCBConst2     \n"     /* Obtain location of pxCurrentTCB. */
+    "ld.w r2, (r2, 0)               \n"
+    "ld.w r2, (r2, 0)               \n"
+    "ld.w r2, (r2, 0)               \n"     /* The first item in pxCurrentTCB is the task top of stack. */
+    "                               \n"
+    "mov r0, r2                     \n"
+    "ldm r8-r15, (r0)               \n"
+    "addi r0, 32                    \n"     /* This is now the new top of stack to use in the task. */
+    "                               \n"
+    "psrset ie                      \n"
+    "rte                            \n"
+    "                               \n"
+    ".align 4                       \n"
+    "pxCurrentTCBConst2: .long pxCurrentTCB"
    );
 }
 /*-----------------------------------------------------------*/
